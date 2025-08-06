@@ -1,35 +1,41 @@
-import os
 from flask import Flask, request, jsonify
-from openai import OpenAI
+import os
+import openai
 
+# Khởi tạo Flask app
 app = Flask(__name__)
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-MODEL = "gpt-4o-mini"
+# Lấy API key từ biến môi trường
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-client = OpenAI(api_key=OPENAI_API_KEY)
-
-@app.route('/')
+# Route kiểm tra hoạt động
+@app.route("/", methods=["GET"])
 def home():
-    return "BDS Chatbot is running!"
+    return "Chatbot BDS đang chạy!"
 
-@app.route('/chat', methods=['POST'])
+# Route chat với bot
+@app.route("/chat", methods=["POST"])
 def chat():
-    data = request.get_json()
-    message = data.get("message", "")
+    try:
+        user_message = request.json.get("message", "")
+        if not user_message:
+            return jsonify({"error": "Thiếu tin nhắn"}), 400
 
-    if not message:
-        return jsonify({"error": "No message provided"}), 400
+        # Gọi API OpenAI
+        response = openai.ChatCompletion.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "Bạn là trợ lý Bất động sản chuyên nghiệp."},
+                {"role": "user", "content": user_message}
+            ]
+        )
 
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=[
-            {"role": "system", "content": "Bạn là trợ lý bất động sản, trả lời ngắn gọn, dễ hiểu."},
-            {"role": "user", "content": message}
-        ]
-    )
+        reply = response.choices[0].message["content"]
+        return jsonify({"reply": reply})
 
-    return jsonify({"reply": response.choices[0].message.content})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+# Chạy local
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
