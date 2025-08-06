@@ -1,5 +1,7 @@
 # Bỏ qua file chứa API key
 key.txt
 .env
+
+# Bỏ qua thư mục cache Python
 __pycache__/
 *.pyc
