@@ -4,7 +4,7 @@ import os
 
 app = Flask(__name__)
 openai.api_key = os.getenv("OPENAI_API_KEY")
-
+print("DEBUG: Loaded API key:", openai.api_key)
 html_template = """
 <!doctype html>
 <html lang="vi">
