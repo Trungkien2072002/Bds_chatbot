@@ -1,89 +1,79 @@
-from flask import Flask, request, render_template_string
-import openai
 import os
+from flask import Flask, render_template_string, request
+import openai
 
+# Khởi tạo Flask
 app = Flask(__name__)
+
+# Lấy API key từ biến môi trường
 openai.api_key = os.getenv("OPENAI_API_KEY")
-print("DEBUG: Loaded API key:", openai.api_key)
-html_template = """
-<!doctype html>
+
+# Giao diện HTML đơn giản
+HTML_TEMPLATE = """
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chatbot Bất động sản</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f1f1f1;
-            padding: 30px;
-            max-width: 600px;
-            margin: auto;
+        body { font-family: Arial, sans-serif; background: #f2f2f2; }
+        .chatbox {
+            width: 400px; margin: 80px auto; padding: 20px;
+            background: white; border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        h2 {
-            color: #333;
+        input[type="text"] {
+            width: 100%; padding: 10px; border: 1px solid #ccc;
+            border-radius: 4px; margin-top: 10px;
         }
-        .chat-box {
-            background: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .user-input {
-            width: 100%;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            margin-bottom: 10px;
-        }
-        .submit-btn {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+        button {
+            background: #007bff; color: white; border: none;
+            padding: 10px 16px; margin-top: 10px; border-radius: 4px;
             cursor: pointer;
         }
         .response {
-            margin-top: 20px;
-            background: #e8f0fe;
-            padding: 15px;
-            border-radius: 5px;
-            border-left: 4px solid #007bff;
+            margin-top: 15px; padding: 10px;
+            background: #e9f5ff; border-left: 4px solid #007bff;
         }
     </style>
 </head>
 <body>
-    <div class="chat-box">
+    <div class="chatbox">
         <h2>💬 Chatbot Bất động sản</h2>
-        <form method="post">
-            <input name="user_input" class="user-input" placeholder="Nhập câu hỏi về bất động sản..." autofocus>
-            <button type="submit" class="submit-btn">Gửi</button>
+        <form method="POST">
+            <input type="text" name="message" placeholder="Nhập câp c\xe2u hỏi...">
+            <button type="submit">Gửi</button>
         </form>
         {% if response %}
-            <div class="response">
-                <strong>Bot trả lời:</strong><br>{{ response }}
-            </div>
+        <div class="response">
+            <strong>Bot:</strong> {{ response }}
+        </div>
         {% endif %}
     </div>
 </body>
 </html>
 """
 
+# Route chính
 @app.route("/", methods=["GET", "POST"])
-def chatbot():
-    response = None
+def index():
+    response = ""
     if request.method == "POST":
-        user_input = request.form["user_input"]
-        res = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "Bạn là chuyên gia tư vấn bất động sản."},
-                {"role": "user", "content": user_input},
-            ]
-        )
-        response = res["choices"][0]["message"]["content"]
-    return render_template_string(html_template, response=response)
+        user_input = request.form.get("message", "")
+        if user_input:
+            try:
+                result = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "Bạn là một chuyên gia bất động sản, trả lời ngắn gọn và chính xác."},
+                        {"role": "user", "content": user_input}
+                    ]
+                )
+                response = result["choices"][0]["message"]["content"]
+            except Exception as e:
+                response = f"Lỗi khi gọi OpenAI API: {str(e)}"
+    return render_template_string(HTML_TEMPLATE, response=response)
 
+# Khởi chạy ứng dụng
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=5000)
