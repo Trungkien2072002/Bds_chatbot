@@ -1,41 +1,41 @@
 from flask import Flask, request, jsonify
-import os
 import openai
+import os
 
-# Khởi tạo Flask app
+# Tạo Flask app, trùng tên với `app` trong Procfile
 app = Flask(__name__)
 
-# Lấy API key từ biến môi trường
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Lấy API key từ biến môi trường hoặc file key.txt
+if os.path.exists("key.txt"):
+    with open("key.txt") as f:
+        openai.api_key = f.read().strip()
+else:
+    openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-# Route kiểm tra hoạt động
-@app.route("/", methods=["GET"])
+@app.route('/')
 def home():
-    return "Chatbot BDS đang chạy!"
+    return "Chatbot Bất động sản đang chạy!"
 
-# Route chat với bot
-@app.route("/chat", methods=["POST"])
+@app.route('/chat', methods=['POST'])
 def chat():
     try:
-        user_message = request.json.get("message", "")
-        if not user_message:
-            return jsonify({"error": "Thiếu tin nhắn"}), 400
+        user_input = request.json.get("message")
+        if not user_input:
+            return jsonify({"error": "Không có nội dung"}), 400
 
-        # Gọi API OpenAI
         response = openai.ChatCompletion.create(
-            model="gpt-4o-mini",
+            model="gpt-3.5-turbo",  # hoặc gpt-4 nếu bạn có quyền
             messages=[
-                {"role": "system", "content": "Bạn là trợ lý Bất động sản chuyên nghiệp."},
-                {"role": "user", "content": user_message}
+                {"role": "system", "content": "Bạn là chatbot tư vấn bất động sản."},
+                {"role": "user", "content": user_input}
             ]
         )
-
-        reply = response.choices[0].message["content"]
+        reply = response.choices[0].message['content']
         return jsonify({"reply": reply})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Chạy local
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+# Để local chạy được
+if __name__ == '__main__':
+    app.run(debug=True)
