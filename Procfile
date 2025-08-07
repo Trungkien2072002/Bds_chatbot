@@ -1,1 +1,1 @@
-web gunicorn bds_bot:app
+web: gunicorn bds_bot:app
